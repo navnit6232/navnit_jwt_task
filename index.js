@@ -26,6 +26,23 @@ const pool = mysql.createPool({
   
   }
    );
+
+// this function will going to use to validate the user based on token.
+   function validateJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      const token = authHeader.split(' ')[1];
+      jwt.verify(token, 'secret', (err, decodedToken) => {
+        if (err) {
+          return res.status(401).json({ message: 'Invalid or expired token' });
+        }
+        req.user = decodedToken;
+        next();
+      });
+    } else {
+      res.status(401).json({ message: 'Token not found' });
+    }
+  }
        
 // normal router to check either project is running or not
 app.get("/",(req,res)=>{
@@ -34,7 +51,8 @@ app.get("/",(req,res)=>{
     })
 })
 // Router to register a new user to the database
-app.post("/register", (req, res) => {
+//  now we are validating the route with validateJWT 
+app.post("/register",validateJWT, (req, res) => {
   const value_reg= req.body;
   const name=value_reg.name;
   const email=value_reg.email;
